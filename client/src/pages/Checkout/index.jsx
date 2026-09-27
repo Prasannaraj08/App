@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../context/StoreContext';
+import { formatCurrency } from '../../utils/currency';
 
 export default function Checkout() {
   const { cart, checkout, token } = useStore();
@@ -15,7 +16,10 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [error, setError] = useState('');
 
-  const total = cart.reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0);
+  const total = useMemo(
+    () => cart.reduce((sum, item) => sum + (Number(item.product?.price || 0) * Number(item.quantity || 0)), 0),
+    [cart]
+  );
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -25,8 +29,13 @@ export default function Checkout() {
       return;
     }
 
+    if (!cart.length) {
+      setError('Your cart is empty.');
+      return;
+    }
+
     try {
-      await checkout({ ...shippingAddress }, paymentMethod);
+      await checkout({ ...shippingAddress }, paymentMethod, total);
       navigate('/orders');
     } catch (err) {
       setError(err.response?.data?.message || 'Checkout failed.');
@@ -69,7 +78,7 @@ export default function Checkout() {
           </label>
 
           {error && <p className="error-message">{error}</p>}
-          <button type="submit" className="btn btn-primary full-width">Confirm order</button>
+          <button type="submit" className="btn btn-primary full-width" disabled={!cart.length}>Confirm order</button>
         </form>
 
         <aside className="summary-box">
@@ -77,12 +86,12 @@ export default function Checkout() {
           {cart.map((item) => (
             <div className="summary-row" key={item.id}>
               <span>{item.product?.name} x {item.quantity}</span>
-              <strong>₹{(item.product?.price || 0) * item.quantity}</strong>
+              <strong>{formatCurrency((Number(item.product?.price || 0) * Number(item.quantity || 0)))}</strong>
             </div>
           ))}
           <div className="summary-row total-row">
             <span>Total</span>
-            <strong>₹{total}</strong>
+            <strong>{formatCurrency(total)}</strong>
           </div>
         </aside>
       </div>

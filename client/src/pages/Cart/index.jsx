@@ -1,13 +1,14 @@
 import { useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../../context/StoreContext';
+import { formatCurrency } from '../../utils/currency';
 
 export default function Cart() {
   const { cart, updateCartItem, removeCartItem, token } = useStore();
   const navigate = useNavigate();
 
   const total = useMemo(
-    () => cart.reduce((sum, item) => sum + (item.product?.price || 0) * item.quantity, 0),
+    () => cart.reduce((sum, item) => sum + (Number(item.product?.price || 0) * Number(item.quantity || 0)), 0),
     [cart]
   );
 
@@ -15,9 +16,18 @@ export default function Cart() {
     if (!token) {
       navigate('/login');
     }
-  }, [token]);
+  }, [token, navigate]);
 
   if (!token) return null;
+
+  const handleQuantityChange = (itemId, nextValue) => {
+    const safeValue = Number(nextValue);
+    if (!Number.isFinite(safeValue) || safeValue < 1) {
+      return;
+    }
+
+    updateCartItem(itemId, safeValue);
+  };
 
   return (
     <div className="page cart-page">
@@ -36,14 +46,15 @@ export default function Cart() {
                 <div className="cart-item-info">
                   <h3>{item.product?.name}</h3>
                   <p>Size: {item.size}</p>
-                  <p>₹{item.product?.price}</p>
+                  <p>{formatCurrency(item.product?.price || 0)}</p>
                 </div>
                 <div className="cart-item-actions">
                   <input
                     type="number"
                     min="1"
+                    max="10"
                     value={item.quantity}
-                    onChange={(event) => updateCartItem(item.id, Number(event.target.value) || 1)}
+                    onChange={(event) => handleQuantityChange(item.id, event.target.value)}
                   />
                   <button type="button" className="btn btn-secondary" onClick={() => removeCartItem(item.id)}>Remove</button>
                 </div>
@@ -55,7 +66,7 @@ export default function Cart() {
             <h3>Order summary</h3>
             <div className="summary-row">
               <span>Subtotal</span>
-              <strong>₹{total}</strong>
+              <strong>{formatCurrency(total)}</strong>
             </div>
             <div className="summary-row">
               <span>Shipping</span>
@@ -63,7 +74,7 @@ export default function Cart() {
             </div>
             <div className="summary-row total-row">
               <span>Total</span>
-              <strong>₹{total}</strong>
+              <strong>{formatCurrency(total)}</strong>
             </div>
             <Link to="/checkout" className="btn btn-primary full-width">Proceed to checkout</Link>
           </aside>

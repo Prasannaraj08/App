@@ -109,8 +109,13 @@ export function StoreProvider({ children }) {
     return response.data;
   };
 
-  const checkout = async (shippingAddress, paymentMethod) => {
-    const response = await api.post('/orders', { shippingAddress, paymentMethod });
+  const checkout = async (shippingAddress, paymentMethod, totalAmount) => {
+    const response = await api.post('/orders', {
+      shippingAddress,
+      paymentMethod,
+      totalAmount,
+    });
+
     setCart([]);
     setOrders((prev) => [response.data.order, ...prev]);
     return response.data;

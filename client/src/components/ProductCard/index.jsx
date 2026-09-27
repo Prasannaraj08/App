@@ -1,7 +1,26 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useStore } from '../../context/StoreContext';
 
 export default function ProductCard({ product }) {
-  const hasStock = product.sizes?.some((size) => size.stock > 0);
+  const navigate = useNavigate();
+  const { addToCart, user } = useStore();
+  const availableSize = product.sizes?.find((size) => size.stock > 0)?.size || '';
+  const hasStock = Boolean(availableSize);
+
+  const handleAddToCart = async () => {
+    if (!hasStock) return;
+
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      await addToCart(product.id, availableSize, 1);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   return (
     <article className="product-card">
@@ -22,7 +41,7 @@ export default function ProductCard({ product }) {
 
         <div className="product-actions">
           <Link to={`/products/${product.id}`} className="btn btn-secondary">View</Link>
-          <button type="button" className="btn btn-primary" disabled={!hasStock}>
+          <button type="button" className="btn btn-primary" disabled={!hasStock} onClick={handleAddToCart}>
             {hasStock ? 'Add to cart' : 'Out of stock'}
           </button>
         </div>

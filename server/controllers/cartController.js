@@ -1,4 +1,5 @@
 import { carts, createCartKey, products } from '../data/store.js';
+import { sanitizeQuantity, toSafeMoney } from '../utils/pricing.js';
 
 const ensureCart = (userId) => {
   if (!carts[userId]) {
@@ -8,13 +9,23 @@ const ensureCart = (userId) => {
   return carts[userId];
 };
 
+const parseQuantity = (value) => {
+  const raw = Number(value);
+
+  if (!Number.isInteger(raw) || !Number.isFinite(raw)) {
+    throw new Error('Quantity must be a positive integer.');
+  }
+
+  return sanitizeQuantity(raw);
+};
+
 export const getCart = (req, res) => {
   const cart = ensureCart(req.user.id);
   const items = cart.items.map((item) => {
     const product = products.find((candidate) => candidate.id === item.productId);
     return {
       ...item,
-      product: product ? { ...product } : null,
+      product: product ? { ...product, price: toSafeMoney(product.price) } : null,
     };
   });
 
@@ -28,9 +39,20 @@ export const addCartItem = (req, res) => {
     return res.status(400).json({ success: false, message: 'Product ID and size are required.' });
   }
 
+  let normalizedQuantity;
+  try {
+    normalizedQuantity = parseQuantity(quantity);
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+
   const product = products.find((item) => item.id === productId);
   if (!product) {
     return res.status(404).json({ success: false, message: 'Product not found.' });
+  }
+
+  if (toSafeMoney(product.price) < 0) {
+    return res.status(400).json({ success: false, message: 'Product price is invalid.' });
   }
 
   const sizeStock = product.sizes.find((item) => item.size === size);
@@ -47,7 +69,7 @@ export const addCartItem = (req, res) => {
   const existingItem = cart.items.find((item) => item.id === itemId);
 
   if (existingItem) {
-    const updatedQty = existingItem.quantity + Number(quantity);
+    const updatedQty = existingItem.quantity + normalizedQuantity;
     if (updatedQty > sizeStock.stock) {
       return res.status(400).json({ success: false, message: 'Requested quantity exceeds available stock.' });
     }
@@ -55,12 +77,11 @@ export const addCartItem = (req, res) => {
     return res.status(200).json({ success: true, cart: cart.items });
   }
 
-  const nextQty = Number(quantity);
-  if (nextQty > sizeStock.stock) {
+  if (normalizedQuantity > sizeStock.stock) {
     return res.status(400).json({ success: false, message: 'Requested quantity exceeds available stock.' });
   }
 
-  cart.items.push({ id: itemId, productId, size, quantity: nextQty });
+  cart.items.push({ id: itemId, productId, size, quantity: normalizedQuantity });
   return res.status(201).json({ success: true, cart: cart.items });
 };
 
@@ -80,7 +101,13 @@ export const updateCartItem = (req, res) => {
     return res.status(404).json({ success: false, message: 'Product is no longer available.' });
   }
 
-  const nextQty = Number(quantity);
+  let nextQty;
+  try {
+    nextQty = parseQuantity(quantity);
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+
   if (nextQty <= 0) {
     cart.items = cart.items.filter((entry) => entry.id !== req.params.itemId);
     return res.json({ success: true, cart: cart.items });

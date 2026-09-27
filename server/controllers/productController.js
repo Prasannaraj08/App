@@ -13,7 +13,11 @@ const sortProducts = (list, sortBy) => {
 
   switch (sortBy) {
     case 'rating':
+    case 'rating_high':
       sorted.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0) || (b.reviewCount || 0) - (a.reviewCount || 0));
+      return sorted;
+    case 'rating_low':
+      sorted.sort((a, b) => (a.averageRating || 0) - (b.averageRating || 0) || (a.reviewCount || 0) - (b.reviewCount || 0));
       return sorted;
     case 'price_asc':
       return sorted.sort((a, b) => a.price - b.price);

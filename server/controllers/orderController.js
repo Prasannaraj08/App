@@ -1,10 +1,11 @@
 import { randomUUID } from 'crypto';
 import { carts, orders, products } from '../data/store.js';
+import { calculateCartTotals, sanitizeQuantity, toSafeMoney } from '../utils/pricing.js';
 
 const paymentOptions = ['UPI', 'Card', 'Cash on Delivery'];
 
 export const createOrder = (req, res) => {
-  const { shippingAddress, paymentMethod } = req.body;
+  const { shippingAddress, paymentMethod, totalAmount: clientTotalAmount } = req.body;
 
   if (!shippingAddress || !shippingAddress.city || !shippingAddress.address) {
     return res.status(400).json({ success: false, message: 'Shipping address is required.' });
@@ -19,29 +20,55 @@ export const createOrder = (req, res) => {
     return res.status(400).json({ success: false, message: 'Cart is empty.' });
   }
 
-  let totalAmount = 0;
+  let summary;
+  try {
+    const validItems = cart.items.map((item) => {
+      const product = products.find((candidate) => candidate.id === item.productId);
+      if (!product) {
+        throw new Error('Product not found during checkout.');
+      }
+
+      const quantity = sanitizeQuantity(item.quantity);
+      const sizeStock = product.sizes.find((entry) => entry.size === item.size);
+      if (!sizeStock || sizeStock.stock < quantity) {
+        throw new Error(`Insufficient stock for ${product.name} in size ${item.size}.`);
+      }
+
+      sizeStock.stock -= quantity;
+
+      return {
+        quantity,
+        product: {
+          price: toSafeMoney(product.price),
+        },
+      };
+    });
+
+    summary = calculateCartTotals(validItems);
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message || 'Unable to validate cart items.' });
+  }
+
+  if (typeof clientTotalAmount !== 'undefined') {
+    const browserAmount = toSafeMoney(clientTotalAmount);
+    if (Math.abs(browserAmount - summary.total) > 0.01) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order total does not match the verified cart amount.',
+      });
+    }
+  }
+
   const orderItems = cart.items.map((item) => {
     const product = products.find((candidate) => candidate.id === item.productId);
-    if (!product) {
-      throw new Error('Product not found during checkout.');
-    }
-
-    const sizeStock = product.sizes.find((entry) => entry.size === item.size);
-    if (!sizeStock || sizeStock.stock < item.quantity) {
-      throw new Error(`Insufficient stock for ${product.name} in size ${item.size}.`);
-    }
-
-    const itemTotal = product.price * item.quantity;
-    totalAmount += itemTotal;
-
-    sizeStock.stock -= item.quantity;
+    const validatedQuantity = sanitizeQuantity(item.quantity);
 
     return {
       productId: product.id,
       productName: product.name,
       size: item.size,
-      quantity: item.quantity,
-      priceAtPurchase: product.price,
+      quantity: validatedQuantity,
+      priceAtPurchase: toSafeMoney(product.price),
     };
   });
 
@@ -50,7 +77,7 @@ export const createOrder = (req, res) => {
     userId: req.user.id,
     items: orderItems,
     shippingAddress,
-    totalAmount,
+    totalAmount: summary.total,
     paymentMethod,
     paymentStatus: 'Paid',
     orderStatus: 'Processing',

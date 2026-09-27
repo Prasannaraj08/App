@@ -5,14 +5,14 @@ import { useStore } from '../../context/StoreContext';
 
 export default function Products() {
   const { fetchProducts, products, loading } = useStore();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [sort, setSort] = useState('newest');
 
   const category = searchParams.get('category') || 'all';
 
   useEffect(() => {
     fetchProducts(category, sort);
-  }, [category, sort]);
+  }, [category, sort, fetchProducts]);
 
   const filteredProducts = useMemo(() => products, [products]);
 
@@ -25,7 +25,8 @@ export default function Products() {
             Sort by
             <select value={sort} onChange={(event) => setSort(event.target.value)}>
               <option value="newest">Newest</option>
-              <option value="rating">Rating</option>
+              <option value="rating_high">Highest rated</option>
+              <option value="rating_low">Lowest rated</option>
               <option value="price_asc">Price: Low to High</option>
               <option value="price_desc">Price: High to Low</option>
             </select>
