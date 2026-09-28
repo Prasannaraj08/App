@@ -48,7 +48,15 @@ export default function Home() {
         <div className="products-grid">
           {featured.map((product) => (
             <article key={product.id} className="product-card compact-card">
-              <img src={product.images?.[0]} alt={product.name} className="product-image" />
+              <img
+                src={product.images?.[0] || 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=900&q=80'}
+                alt={product.name}
+                className="product-image"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=900&q=80';
+                }}
+              />
               <div className="product-details">
                 <div className="product-meta-row">
                   <span className="product-category">{product.category}</span>
@@ -73,7 +81,15 @@ export default function Home() {
         <div className="products-grid">
           {newArrivals.map((product) => (
             <article key={product.id} className="product-card compact-card">
-              <img src={product.images?.[0]} alt={product.name} className="product-image" />
+              <img
+                src={product.images?.[0] || 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=900&q=80'}
+                alt={product.name}
+                className="product-image"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=900&q=80';
+                }}
+              />
               <div className="product-details">
                 <h3>{product.name}</h3>
                 <div className="product-footer">

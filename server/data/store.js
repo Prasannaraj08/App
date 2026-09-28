@@ -55,11 +55,11 @@ export const products = [
   },
   {
     id: 'prod-4',
-    name: 'Urban Denim Jacket',
-    description: 'Structured layering piece that balances comfort with an elevated city style.',
+    name: 'Classic Tailored Blazer',
+    description: 'Premium tailored men blazer structured for comfort, sharp aesthetics, and versatile styling.',
     category: 'men',
     price: 2199,
-    images: ['https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=80'],
+    images: ['https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=900&q=80'],
     sizes: [
       { size: 'S', stock: 4 },
       { size: 'M', stock: 6 },

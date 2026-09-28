@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import ErrorBoundary from './components/ErrorBoundary';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import ProductDetails from './pages/ProductDetails';
@@ -12,25 +13,29 @@ import { StoreProvider } from './context/StoreContext';
 
 function App() {
   return (
-    <StoreProvider>
-      <BrowserRouter>
-        <div className="app-shell">
-          <Navbar />
-          <main className="content-area">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/products/:id" element={<ProductDetails />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/orders" element={<Orders />} />
-            </Routes>
-          </main>
-        </div>
-      </BrowserRouter>
-    </StoreProvider>
+    <ErrorBoundary>
+      <StoreProvider>
+        <BrowserRouter>
+          <div className="app-shell">
+            <Navbar />
+            <main className="content-area">
+              <ErrorBoundary>
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/products" element={<Products />} />
+                  <Route path="/products/:id" element={<ProductDetails />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/orders" element={<Orders />} />
+                </Routes>
+              </ErrorBoundary>
+            </main>
+          </div>
+        </BrowserRouter>
+      </StoreProvider>
+    </ErrorBoundary>
   );
 }
 

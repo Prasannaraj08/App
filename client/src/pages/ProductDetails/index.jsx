@@ -113,7 +113,15 @@ export default function ProductDetails() {
   return (
     <div className="page product-page">
       <div className="product-hero">
-        <img src={product.images?.[0]} alt={product.name} className="detail-image" />
+        <img
+          src={product.images?.[0] || 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=900&q=80'}
+          alt={product.name || 'Product'}
+          className="detail-image"
+          onError={(e) => {
+            e.currentTarget.onerror = null;
+            e.currentTarget.src = 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=900&q=80';
+          }}
+        />
         <div className="product-info">
           <p className="eyebrow">{product.category}</p>
           <h1>{product.name}</h1>

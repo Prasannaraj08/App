@@ -17,6 +17,23 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Cyber Security: Hide server runtime signature to prevent targeted exploits
+app.disable('x-powered-by');
+
+// Cyber Security: Enterprise HTTP security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-DNS-Prefetch-Control', 'off');
+  res.setHeader('X-Download-Options', 'noopen');
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
+
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
@@ -42,7 +59,10 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
+
+// Cyber Security: Prevent memory exhaustion & DoS via payload size limits
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // API routes
 app.use('/api', healthRoutes);

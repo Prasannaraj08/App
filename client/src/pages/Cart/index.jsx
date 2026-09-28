@@ -42,7 +42,15 @@ export default function Cart() {
           <div className="cart-items">
             {cart.map((item) => (
               <div key={item.id} className="cart-item">
-                <img src={item.product?.images?.[0]} alt={item.product?.name} className="cart-item-image" />
+                <img
+                  src={item.product?.images?.[0] || 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=900&q=80'}
+                  alt={item.product?.name || 'Product'}
+                  className="cart-item-image"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=900&q=80';
+                  }}
+                />
                 <div className="cart-item-info">
                   <h3>{item.product?.name}</h3>
                   <p>Size: {item.size}</p>
