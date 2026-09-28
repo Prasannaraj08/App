@@ -19,17 +19,19 @@ const parseQuantity = (value) => {
   return sanitizeQuantity(raw);
 };
 
-export const getCart = (req, res) => {
-  const cart = ensureCart(req.user.id);
-  const items = cart.items.map((item) => {
+const formatCartItems = (cartItems) => {
+  return cartItems.map((item) => {
     const product = products.find((candidate) => candidate.id === item.productId);
     return {
       ...item,
       product: product ? { ...product, price: toSafeMoney(product.price) } : null,
     };
   });
+};
 
-  return res.json({ success: true, cart: items });
+export const getCart = (req, res) => {
+  const cart = ensureCart(req.user.id);
+  return res.json({ success: true, cart: formatCartItems(cart.items) });
 };
 
 export const addCartItem = (req, res) => {
@@ -74,7 +76,7 @@ export const addCartItem = (req, res) => {
       return res.status(400).json({ success: false, message: 'Requested quantity exceeds available stock.' });
     }
     existingItem.quantity = updatedQty;
-    return res.status(200).json({ success: true, cart: cart.items });
+    return res.status(200).json({ success: true, cart: formatCartItems(cart.items) });
   }
 
   if (normalizedQuantity > sizeStock.stock) {
@@ -82,7 +84,7 @@ export const addCartItem = (req, res) => {
   }
 
   cart.items.push({ id: itemId, productId, size, quantity: normalizedQuantity });
-  return res.status(201).json({ success: true, cart: cart.items });
+  return res.status(201).json({ success: true, cart: formatCartItems(cart.items) });
 };
 
 export const updateCartItem = (req, res) => {
@@ -110,7 +112,7 @@ export const updateCartItem = (req, res) => {
 
   if (nextQty <= 0) {
     cart.items = cart.items.filter((entry) => entry.id !== req.params.itemId);
-    return res.json({ success: true, cart: cart.items });
+    return res.json({ success: true, cart: formatCartItems(cart.items) });
   }
 
   if (nextQty > sizeStock.stock) {
@@ -118,7 +120,7 @@ export const updateCartItem = (req, res) => {
   }
 
   item.quantity = nextQty;
-  return res.json({ success: true, cart: cart.items });
+  return res.json({ success: true, cart: formatCartItems(cart.items) });
 };
 
 export const removeCartItem = (req, res) => {
@@ -130,5 +132,6 @@ export const removeCartItem = (req, res) => {
     return res.status(404).json({ success: false, message: 'Cart item not found.' });
   }
 
-  return res.json({ success: true, cart: cart.items });
+  return res.json({ success: true, cart: formatCartItems(cart.items) });
 };
+

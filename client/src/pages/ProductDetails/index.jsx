@@ -23,8 +23,10 @@ export default function ProductDetails() {
     const distribution = [0, 0, 0, 0, 0];
     let total = 0;
     reviews.forEach((review) => {
-      total += Number(review.rating || 0);
-      distribution[Math.min(Number(review.rating || 0), 5) - 1] += 1;
+      const rating = Number(review.rating || 0);
+      total += rating;
+      const index = Math.max(1, Math.min(5, Math.round(rating))) - 1;
+      distribution[index] += 1;
     });
 
     return {

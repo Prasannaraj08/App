@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useStore } from '../../context/StoreContext';
 
@@ -6,6 +7,11 @@ const navLinkClass = ({ isActive }) =>
 
 export default function Navbar() {
   const { user, cart, logout } = useStore();
+
+  const cartCount = useMemo(
+    () => cart.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0),
+    [cart]
+  );
 
   return (
     <header className="navbar">
@@ -18,7 +24,7 @@ export default function Navbar() {
         <NavLink to="/products?category=men" className={navLinkClass}>Men</NavLink>
         <NavLink to="/products?category=women" className={navLinkClass}>Women</NavLink>
         <NavLink to="/products?category=children" className={navLinkClass}>Children</NavLink>
-        <NavLink to="/cart" className={navLinkClass}>Cart ({cart.length})</NavLink>
+        <NavLink to="/cart" className={navLinkClass}>Cart ({cartCount})</NavLink>
       </nav>
 
       <div className="nav-actions">

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
+import { formatCurrency } from '../../utils/currency';
 
 export default function Orders() {
   const { fetchOrders, orders } = useStore();
@@ -29,7 +30,7 @@ export default function Orders() {
                   </li>
                 ))}
               </ul>
-              <p className="price-tag">Total: ₹{order.totalAmount}</p>
+              <p className="price-tag">Total: {formatCurrency(order.totalAmount)}</p>
             </article>
           ))}
         </div>
