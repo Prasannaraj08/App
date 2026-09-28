@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5000/api');
@@ -39,18 +39,23 @@ export function StoreProvider({ children }) {
       .catch(() => setCart([]));
   }, [token]);
 
-  const fetchProducts = async (category = 'all', sort = 'newest') => {
+  const fetchProducts = useCallback(async (category = 'all', sort = 'newest') => {
     setLoading(true);
     try {
       const response = await api.get('/products', { params: { category, sort } });
-      setProducts(response.data.products || []);
-      return response.data.products || [];
+      const items = response.data.products || [];
+      setProducts(items);
+      return items;
+    } catch (error) {
+      console.error('Failed to load products:', error);
+      setProducts([]);
+      return [];
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     const response = await api.post('/auth/login', { email, password });
     const authToken = response.data.token;
     const authUser = response.data.user;
@@ -59,9 +64,9 @@ export function StoreProvider({ children }) {
     setToken(authToken);
     setUser(authUser);
     return response.data;
-  };
+  }, []);
 
-  const register = async (name, email, password) => {
+  const register = useCallback(async (name, email, password) => {
     const response = await api.post('/auth/register', { name, email, password });
     const authToken = response.data.token;
     const authUser = response.data.user;
@@ -70,24 +75,24 @@ export function StoreProvider({ children }) {
     setToken(authToken);
     setUser(authUser);
     return response.data;
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem(tokenKey);
     localStorage.removeItem(userKey);
     setToken('');
     setUser(null);
     setCart([]);
-  };
+  }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!token) return [];
     const response = await api.get('/orders');
     setOrders(response.data.orders || []);
     return response.data.orders || [];
-  };
+  }, [token]);
 
-  const addToCart = async (productId, size, quantity = 1) => {
+  const addToCart = useCallback(async (productId, size, quantity = 1) => {
     if (!token) {
       throw new Error('Login required to add items to cart.');
     }
@@ -95,21 +100,21 @@ export function StoreProvider({ children }) {
     const response = await api.post('/cart', { productId, size, quantity });
     setCart(response.data.cart || []);
     return response.data;
-  };
+  }, [token]);
 
-  const updateCartItem = async (itemId, quantity) => {
+  const updateCartItem = useCallback(async (itemId, quantity) => {
     const response = await api.put(`/cart/${itemId}`, { quantity });
     setCart(response.data.cart || []);
     return response.data;
-  };
+  }, []);
 
-  const removeCartItem = async (itemId) => {
+  const removeCartItem = useCallback(async (itemId) => {
     const response = await api.delete(`/cart/${itemId}`);
     setCart(response.data.cart || []);
     return response.data;
-  };
+  }, []);
 
-  const checkout = async (shippingAddress, paymentMethod, totalAmount) => {
+  const checkout = useCallback(async (shippingAddress, paymentMethod, totalAmount) => {
     const response = await api.post('/orders', {
       shippingAddress,
       paymentMethod,
@@ -119,7 +124,7 @@ export function StoreProvider({ children }) {
     setCart([]);
     setOrders((prev) => [response.data.order, ...prev]);
     return response.data;
-  };
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -141,7 +146,23 @@ export function StoreProvider({ children }) {
       checkout,
       api,
     }),
-    [products, user, token, cart, orders, loading]
+    [
+      products,
+      user,
+      token,
+      cart,
+      orders,
+      loading,
+      fetchProducts,
+      login,
+      register,
+      logout,
+      fetchOrders,
+      addToCart,
+      updateCartItem,
+      removeCartItem,
+      checkout,
+    ]
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
